@@ -16,12 +16,6 @@ const Auth = () => {
   const navigate = useNavigate();
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({
-    email: "",
-    password: "",
-    username: "",
-    role: "cashier" as "owner" | "cashier",
-  });
 
   if (user) {
     navigate("/dashboard");
