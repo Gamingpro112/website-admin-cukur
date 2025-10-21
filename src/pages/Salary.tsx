@@ -80,7 +80,7 @@ const Salary = () => {
     },
   });
 
-  const totalEarnings = salaryData?.reduce((sum: number, barber: any) => sum + Number(barber.total_earnings), 0) || 0;
+  const totalEarnings = Number(salaryData?.reduce((sum: number, barber: any) => sum + Number(barber.total_earnings), 0) ?? 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -156,7 +156,7 @@ const Salary = () => {
                     <TableCell className="font-medium">{barber.barber_name}</TableCell>
                     <TableCell>{barber.transaction_count}</TableCell>
                     <TableCell className="font-medium">
-                      {formatCurrency(barber.total_earnings)}
+                      {formatCurrency(Number(barber.total_earnings))}
                     </TableCell>
                   </TableRow>
                 ))
