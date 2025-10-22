@@ -5,42 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const Transactions = () => {
   const { user, userRole } = useAuth();
@@ -59,17 +31,15 @@ const Transactions = () => {
     queryFn: async () => {
       let query = supabase
         .from("transactions")
-        .select(`
+        .select(
+          `
           *,
           barbers(name),
           services(service_name, price),
           products(product_name, price)
-        `)
+        `
+        )
         .order("transaction_date", { ascending: false });
-
-      if (userRole === "barber") {
-        query = query.eq("cashier_id", user?.id);
-      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -110,9 +80,7 @@ const Transactions = () => {
       const selectedService = services?.find((s) => s.id === data.service_id);
       const selectedProduct = products?.find((p) => p.id === data.product_id);
 
-      const totalPrice =
-        (selectedService ? Number(selectedService.price) : 0) +
-        (selectedProduct ? Number(selectedProduct.price) : 0);
+      const totalPrice = (selectedService ? Number(selectedService.price) : 0) + (selectedProduct ? Number(selectedProduct.price) : 0);
 
       if (editingId) {
         const { error } = await supabase
@@ -204,13 +172,11 @@ const Transactions = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Transaksi</h1>
-            <p className="text-muted-foreground">
-              {userRole === "owner" ? "Lihat semua transaksi" : "Kelola transaksi Anda"}
-            </p>
+            <p className="text-muted-foreground">{userRole === "owner" ? "Lihat semua transaksi" : "Kelola transaksi Anda"}</p>
           </div>
-          <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
+          <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => setIsOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Tambah Transaksi
               </Button>
@@ -306,25 +272,13 @@ const Transactions = () => {
                     <TableCell>{transaction.barbers?.name || "-"}</TableCell>
                     <TableCell>{transaction.services?.service_name || "-"}</TableCell>
                     <TableCell>{transaction.products?.product_name || "-"}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(Number(transaction.total_price))}
-                    </TableCell>
+                    <TableCell className="font-medium">{formatCurrency(Number(transaction.total_price))}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(transaction)}
-                          disabled={addMutation.isPending}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(transaction)} disabled={addMutation.isPending}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(transaction.id)}
-                          disabled={deleteMutation.isPending}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(transaction.id)} disabled={deleteMutation.isPending}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -346,16 +300,11 @@ const Transactions = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Hapus Transaksi</AlertDialogTitle>
-              <AlertDialogDescription>
-                Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.
-              </AlertDialogDescription>
+              <AlertDialogDescription>Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Batal</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
+              <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 Hapus
               </AlertDialogAction>
             </AlertDialogFooter>
