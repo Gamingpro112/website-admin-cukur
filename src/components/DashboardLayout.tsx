@@ -42,11 +42,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary rounded-lg">
-              <Scissors className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img className="w-20" src="/public/images/logoweb.png" alt="logoweb" />
+
             <div>
-              <h1 className="font-bold text-lg">Barbershop</h1>
+              <h1 className="font-bold text-lg">{user?.user_metadata?.username}</h1>
               <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
             </div>
           </div>
@@ -58,16 +57,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             const isActive = location.pathname === link.href;
 
             return (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted text-foreground"
-                )}
-              >
+              <Link key={link.href} to={link.href} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg transition-colors", isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground")}>
                 <Icon className="h-5 w-5" />
                 <span className="font-medium">{link.label}</span>
               </Link>

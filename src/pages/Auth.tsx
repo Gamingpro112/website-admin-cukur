@@ -39,11 +39,9 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary rounded-full">
-              <Scissors className="h-8 w-8 text-primary-foreground" />
-            </div>
+            <img className="w-20" src="/public/images/logoweb.png" alt="logoweb" />
           </div>
-          <CardTitle className="text-2xl font-bold">Barbershop Kasir</CardTitle>
+          <CardTitle className="text-2xl font-bold">Murphy Kasir</CardTitle>
           <CardDescription>Masuk ke Sistem Manajemen</CardDescription>
         </CardHeader>
         <CardContent>
