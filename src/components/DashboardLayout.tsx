@@ -42,7 +42,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <img className="w-20" src="/public/images/logoweb.png" alt="logoweb" />
+            <img className="w-20" src="../public/images/logoweb.png" alt="logoweb" />
 
             <div>
               <h1 className="font-bold text-lg">{user?.user_metadata?.username}</h1>
