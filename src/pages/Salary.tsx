@@ -19,14 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { subDays, startOfDay, endOfDay, subWeeks, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
-type Period = "today" | "week" | "month";
+type Period = "today" | "week" | "month" | "year" | "custom";
 
 const Salary = () => {
   const [period, setPeriod] = useState<Period>("today");
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
   const getDateRange = (period: Period) => {
     const now = new Date();
@@ -37,11 +39,16 @@ const Salary = () => {
         return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
       case "month":
         return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "year":
+        return { start: startOfYear(now), end: endOfYear(now) };
+      case "custom":
+        const customDate = new Date(selectedYear, selectedMonth - 1, 1);
+        return { start: startOfMonth(customDate), end: endOfMonth(customDate) };
     }
   };
 
   const { data: salaryData, isLoading } = useQuery({
-    queryKey: ["salary", period],
+    queryKey: ["salary", period, selectedYear, selectedMonth],
     queryFn: async () => {
       const { start, end } = getDateRange(period);
 
@@ -98,8 +105,15 @@ const Salary = () => {
         return "Minggu Ini";
       case "month":
         return "Bulan Ini";
+      case "year":
+        return "Tahun Ini";
+      case "custom":
+        return `${format(new Date(selectedYear, selectedMonth - 1), "MMMM yyyy", { locale: localeId })}`;
     }
   };
+
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   return (
     <DashboardLayout>
@@ -109,8 +123,8 @@ const Salary = () => {
           <p className="text-muted-foreground">Lihat pendapatan tukang cukur berdasarkan periode</p>
         </div>
 
-        <div className="flex gap-4 items-end">
-          <div className="space-y-2 w-64">
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="space-y-2 w-full sm:w-64">
             <Label>Periode</Label>
             <Select value={period} onValueChange={(value: Period) => setPeriod(value)}>
               <SelectTrigger>
@@ -120,9 +134,47 @@ const Salary = () => {
                 <SelectItem value="today">Hari Ini</SelectItem>
                 <SelectItem value="week">Minggu Ini</SelectItem>
                 <SelectItem value="month">Bulan Ini</SelectItem>
+                <SelectItem value="year">Tahun Ini</SelectItem>
+                <SelectItem value="custom">Kustom</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {period === "custom" && (
+            <>
+              <div className="space-y-2 w-full sm:w-40">
+                <Label>Tahun</Label>
+                <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(Number(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 w-full sm:w-40">
+                <Label>Bulan</Label>
+                <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(Number(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month} value={month.toString()}>
+                        {format(new Date(2000, month - 1), "MMMM", { locale: localeId })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
 
         <Card>

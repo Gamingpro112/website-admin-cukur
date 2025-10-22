@@ -20,20 +20,34 @@ const Dashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [barbers, services, products, transactions, salary_records] = await Promise.all([
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const [barbers, services, products, transactions, todayTransactions] = await Promise.all([
         supabase.from("barbers").select("*", { count: "exact", head: true }),
         supabase.from("services").select("*", { count: "exact", head: true }),
         supabase.from("products").select("*", { count: "exact", head: true }),
         supabase.from("transactions").select("*", { count: "exact", head: true }),
-        supabase.from("salary_records").select("*", { count: "exact", head: true }),
+        supabase
+          .from("transactions")
+          .select("total_price")
+          .gte("transaction_date", today.toISOString())
+          .lt("transaction_date", tomorrow.toISOString()),
       ]);
+
+      const todayEarnings = todayTransactions.data?.reduce(
+        (sum, t) => sum + Number(t.total_price || 0),
+        0
+      ) || 0;
 
       return {
         barbers: barbers.count || 0,
         services: services.count || 0,
         products: products.count || 0,
         transactions: transactions.count || 0,
-        salary_records: salary_records.count || 0,
+        todayEarnings,
       };
     },
     enabled: !!user && userRole === "owner",
@@ -100,11 +114,17 @@ const Dashboard = () => {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Pendapatan Hariini</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Pendapatan Hari Ini</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats?.salary_records || 0}</div>
+                <div className="text-2xl font-bold text-accent">
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                  }).format(stats?.todayEarnings || 0)}
+                </div>
               </CardContent>
             </Card>
           </div>

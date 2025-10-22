@@ -27,14 +27,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Transactions = () => {
   const { user, userRole } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     barber_id: "",
     service_id: "",
@@ -55,7 +67,7 @@ const Transactions = () => {
         `)
         .order("transaction_date", { ascending: false });
 
-      if (userRole === "cashier") {
+      if (userRole === "barber") {
         query = query.eq("cashier_id", user?.id);
       }
 
@@ -102,24 +114,54 @@ const Transactions = () => {
         (selectedService ? Number(selectedService.price) : 0) +
         (selectedProduct ? Number(selectedProduct.price) : 0);
 
-      const { error } = await supabase.from("transactions").insert({
-        cashier_id: user?.id,
-        barber_id: data.barber_id || null,
-        service_id: data.service_id || null,
-        product_id: data.product_id || null,
-        total_price: totalPrice,
-      });
+      if (editingId) {
+        const { error } = await supabase
+          .from("transactions")
+          .update({
+            barber_id: data.barber_id || null,
+            service_id: data.service_id || null,
+            product_id: data.product_id || null,
+            total_price: totalPrice,
+          })
+          .eq("id", editingId);
 
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("transactions").insert({
+          cashier_id: user?.id,
+          barber_id: data.barber_id || null,
+          service_id: data.service_id || null,
+          product_id: data.product_id || null,
+          total_price: totalPrice,
+        });
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.success(editingId ? "Transaksi berhasil diperbarui" : "Transaksi berhasil ditambahkan");
+      setIsOpen(false);
+      setEditingId(null);
+      setFormData({ barber_id: "", service_id: "", product_id: "" });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Gagal menyimpan transaksi");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("transactions").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Transaksi berhasil ditambahkan");
-      setIsOpen(false);
-      setFormData({ barber_id: "", service_id: "", product_id: "" });
+      toast.success("Transaksi berhasil dihapus");
+      setDeleteId(null);
     },
     onError: (error: any) => {
-      toast.error(error.message || "Gagal menambahkan transaksi");
+      toast.error(error.message || "Gagal menghapus transaksi");
     },
   });
 
@@ -130,6 +172,22 @@ const Transactions = () => {
     } else {
       toast.error("Silakan pilih tukang cukur");
     }
+  };
+
+  const handleEdit = (transaction: any) => {
+    setEditingId(transaction.id);
+    setFormData({
+      barber_id: transaction.barber_id || "",
+      service_id: transaction.service_id || "",
+      product_id: transaction.product_id || "",
+    });
+    setIsOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsOpen(false);
+    setEditingId(null);
+    setFormData({ barber_id: "", service_id: "", product_id: "" });
   };
 
   const formatCurrency = (amount: number) => {
@@ -150,7 +208,7 @@ const Transactions = () => {
               {userRole === "owner" ? "Lihat semua transaksi" : "Kelola transaksi Anda"}
             </p>
           </div>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -159,7 +217,7 @@ const Transactions = () => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Tambah Transaksi</DialogTitle>
+                <DialogTitle>{editingId ? "Edit Transaksi" : "Tambah Transaksi"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div className="space-y-2">
@@ -227,12 +285,13 @@ const Transactions = () => {
                 <TableHead>Layanan</TableHead>
                 <TableHead>Produk</TableHead>
                 <TableHead>Total</TableHead>
+                <TableHead className="w-[100px]">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Memuat...
                   </TableCell>
                 </TableRow>
@@ -250,11 +309,31 @@ const Transactions = () => {
                     <TableCell className="font-medium">
                       {formatCurrency(Number(transaction.total_price))}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(transaction)}
+                          disabled={addMutation.isPending}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(transaction.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Belum ada transaksi
                   </TableCell>
                 </TableRow>
@@ -262,6 +341,26 @@ const Transactions = () => {
             </TableBody>
           </Table>
         </div>
+
+        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Transaksi</AlertDialogTitle>
+              <AlertDialogDescription>
+                Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Hapus
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
