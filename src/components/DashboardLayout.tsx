@@ -16,6 +16,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const ownerLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/dashboard/cashiers", label: "Kasir", icon: Users },
     { href: "/dashboard/barbers", label: "Tukang Cukur", icon: Users },
     { href: "/dashboard/services", label: "Layanan", icon: Package },
     { href: "/dashboard/products", label: "Produk", icon: ShoppingCart },
