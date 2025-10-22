@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Scissors } from "lucide-react";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -27,11 +26,11 @@ const Index = () => {
       <div className="text-center space-y-6 max-w-md px-4">
         <div className="flex justify-center">
           <div className="p-4">
-            <img src="./public/images/logoweb.png" alt="logo web" />
+            <img className="w-60" src="./public/images/logoweb.png" alt="logo web" />
           </div>
         </div>
-        <h1 className="text-4xl font-bold">Barbershop Kasir</h1>
-        <p className="text-xl text-muted-foreground">Sistem Manajemen Barbershop Modern untuk Owner & Kasir</p>
+        <h1 className="text-4xl font-bold">Murphy Kasir</h1>
+        <p className="text-xl text-muted-foreground">Sistem Manajemen Kasir Modern untuk Owner & Kasir</p>
         <Button size="lg" onClick={() => navigate("/auth")} className="mt-4">
           Masuk ke Sistem
         </Button>

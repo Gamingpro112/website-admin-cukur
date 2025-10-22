@@ -20,11 +20,12 @@ const Dashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [barbers, services, products, transactions] = await Promise.all([
+      const [barbers, services, products, transactions, salary_records] = await Promise.all([
         supabase.from("barbers").select("*", { count: "exact", head: true }),
         supabase.from("services").select("*", { count: "exact", head: true }),
         supabase.from("products").select("*", { count: "exact", head: true }),
         supabase.from("transactions").select("*", { count: "exact", head: true }),
+        supabase.from("salary_records").select("*", { count: "exact", head: true }),
       ]);
 
       return {
@@ -32,6 +33,7 @@ const Dashboard = () => {
         services: services.count || 0,
         products: products.count || 0,
         transactions: transactions.count || 0,
+        salary_records: salary_records.count || 0,
       };
     },
     enabled: !!user && userRole === "owner",
@@ -51,19 +53,15 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Selamat datang di sistem manajemen barbershop
-          </p>
+          <h1 className="text-3xl font-bold">Halaman Utama</h1>
+          <p className="text-muted-foreground">Selamat datang di sistem manajemen Murphy</p>
         </div>
 
         {userRole === "owner" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Tukang Cukur
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Tukang Cukur</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -73,9 +71,7 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Layanan
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Layanan</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -85,9 +81,7 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Produk
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Produk</CardTitle>
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -97,13 +91,20 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Transaksi
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Transaksi</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.transactions || 0}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Pendapatan Hariini</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.salary_records || 0}</div>
               </CardContent>
             </Card>
           </div>
@@ -115,9 +116,7 @@ const Dashboard = () => {
               <CardTitle>Selamat Datang</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                Gunakan menu navigasi untuk mencatat transaksi dan melihat riwayat transaksi Anda.
-              </p>
+              <p className="text-muted-foreground">Gunakan menu navigasi untuk mencatat transaksi dan melihat riwayat transaksi Anda.</p>
             </CardContent>
           </Card>
         )}
