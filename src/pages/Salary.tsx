@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // NEW
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -17,7 +17,6 @@ const Salary = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
-  // NEW: untuk dialog detail
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -80,30 +79,45 @@ const Salary = () => {
     },
   });
 
-  // NEW: ambil detail transaksi untuk tukang cukur tertentu
+  // Detail transaksi per layanan
   const { data: barberTransactions, isLoading: loadingDetails } = useQuery({
     queryKey: ["barber-transactions", selectedBarber?.barber_id, period, selectedYear, selectedMonth],
     queryFn: async () => {
       if (!selectedBarber) return [];
       const { start, end } = getDateRange(period);
+
       const { data, error } = await supabase
         .from("transactions")
         .select(
           `
           id,
-          transaction_date,
           total_price,
-          services(service_name),
-          products(product_name)
+          services(service_name)
         `
         )
         .eq("barber_id", selectedBarber.barber_id)
         .gte("transaction_date", start.toISOString())
-        .lte("transaction_date", end.toISOString())
-        .order("transaction_date", { ascending: false });
+        .lte("transaction_date", end.toISOString());
 
       if (error) throw error;
-      return data;
+
+      // 🔥 Kelompokkan berdasarkan layanan
+      const groupedServices = data.reduce((acc: any, t: any) => {
+        const serviceName = t.services?.service_name || "Tidak Diketahui";
+        if (!acc[serviceName]) {
+          acc[serviceName] = { count: 0, total: 0 };
+        }
+        acc[serviceName].count += 1;
+        acc[serviceName].total += Number(t.total_price);
+        return acc;
+      }, {});
+
+      // Ubah ke bentuk array
+      return Object.entries(groupedServices).map(([service_name, value]: any) => ({
+        service_name,
+        count: value.count,
+        total: value.total,
+      }));
     },
     enabled: !!selectedBarber,
   });
@@ -254,11 +268,11 @@ const Salary = () => {
           </Table>
         </div>
 
-        {/* NEW: Dialog detail transaksi */}
+        {/* Dialog Detail Layanan */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Detail Transaksi - {selectedBarber?.barber_name}</DialogTitle>
+              <DialogTitle>Detail Layanan - {selectedBarber?.barber_name}</DialogTitle>
             </DialogHeader>
 
             {loadingDetails ? (
@@ -268,23 +282,17 @@ const Salary = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Tanggal</TableHead>
                       <TableHead>Layanan</TableHead>
-                      <TableHead>Produk</TableHead>
+                      <TableHead>Jumlah</TableHead>
                       <TableHead>Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {barberTransactions.map((t: any) => (
-                      <TableRow key={t.id}>
-                        <TableCell>
-                          {format(new Date(t.transaction_date), "dd MMM yyyy HH:mm", {
-                            locale: localeId,
-                          })}
-                        </TableCell>
-                        <TableCell>{t.services?.service_name || "-"}</TableCell>
-                        <TableCell>{t.products?.product_name || "-"}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(Number(t.total_price))}</TableCell>
+                    {barberTransactions.map((item: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.service_name}</TableCell>
+                        <TableCell>{item.count}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(item.total)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
