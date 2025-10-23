@@ -24,12 +24,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { href: "/dashboard/salary", label: "Gaji", icon: DollarSign },
   ];
 
-  const cashierLinks = [
+  const barberLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/dashboard/transactions", label: "Transaksi Saya", icon: FileText },
+    { href: "/dashboard/barber-salary", label: "Pendapatan Saya", icon: DollarSign },
   ];
 
-  const links = userRole === "owner" ? ownerLinks : cashierLinks;
+  const links = userRole === "owner" ? ownerLinks : barberLinks;
 
   const handleLogout = async () => {
     await signOut();

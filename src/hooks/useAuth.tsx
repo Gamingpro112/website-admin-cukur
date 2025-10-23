@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-type UserRole = "owner" | "cashier" | null;
+type UserRole = "owner" | "barber" | null;
 
 interface AuthContextType {
   user: User | null;
@@ -12,7 +12,7 @@ interface AuthContextType {
   userRole: UserRole;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, username: string, role: "owner" | "cashier") => Promise<void>;
+  signUp: (email: string, password: string, username: string, role: "owner" | "barber") => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     toast.success("Login berhasil!");
   };
 
-  const signUp = async (email: string, password: string, username: string, role: "owner" | "cashier") => {
+  const signUp = async (email: string, password: string, username: string, role: "owner" | "barber") => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({

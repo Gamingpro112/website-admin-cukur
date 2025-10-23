@@ -130,7 +130,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {userRole === "cashier" && (
+        {userRole === "barber" && (
           <Card>
             <CardHeader>
               <CardTitle>Selamat Datang</CardTitle>

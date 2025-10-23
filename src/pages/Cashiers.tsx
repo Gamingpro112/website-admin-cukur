@@ -39,7 +39,7 @@ const Cashiers = () => {
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .eq("role", "cashier");
+        .eq("role", "barber");
 
       if (rolesError) throw rolesError;
 
@@ -78,7 +78,7 @@ const Cashiers = () => {
       if (data.user) {
         const { error: roleError } = await supabase
           .from("user_roles")
-          .insert({ user_id: data.user.id, role: "cashier" });
+          .insert({ user_id: data.user.id, role: "barber" });
 
         if (roleError) throw roleError;
       }
