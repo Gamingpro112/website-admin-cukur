@@ -27,7 +27,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const barberLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/dashboard/transactions", label: "Transaksi Saya", icon: FileText },
-    { href: "/dashboard/barber-salary", label: "Pendapatan Saya", icon: DollarSign },
+    { href: "/dashboard/salary", label: "Pendapatan ", icon: DollarSign },
   ];
 
   const links = userRole === "owner" ? ownerLinks : barberLinks;

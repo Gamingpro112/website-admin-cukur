@@ -30,17 +30,10 @@ const Dashboard = () => {
         supabase.from("services").select("*", { count: "exact", head: true }),
         supabase.from("products").select("*", { count: "exact", head: true }),
         supabase.from("transactions").select("*", { count: "exact", head: true }),
-        supabase
-          .from("transactions")
-          .select("total_price")
-          .gte("transaction_date", today.toISOString())
-          .lt("transaction_date", tomorrow.toISOString()),
+        supabase.from("transactions").select("total_price").gte("transaction_date", today.toISOString()).lt("transaction_date", tomorrow.toISOString()),
       ]);
 
-      const todayEarnings = todayTransactions.data?.reduce(
-        (sum, t) => sum + Number(t.total_price || 0),
-        0
-      ) || 0;
+      const todayEarnings = todayTransactions.data?.reduce((sum, t) => sum + Number(t.total_price || 0), 0) || 0;
 
       return {
         barbers: barbers.count || 0,
@@ -130,7 +123,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {userRole === "barber" && (
+        {userRole === "cashier" && (
           <Card>
             <CardHeader>
               <CardTitle>Selamat Datang</CardTitle>
