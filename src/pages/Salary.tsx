@@ -4,23 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
-import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // NEW
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
 type Period = "today" | "week" | "month" | "year" | "custom";
@@ -29,6 +16,10 @@ const Salary = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+
+  // NEW: untuk dialog detail
+  const [selectedBarber, setSelectedBarber] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const getDateRange = (period: Period) => {
     const now = new Date();
@@ -54,11 +45,13 @@ const Salary = () => {
 
       const { data, error } = await supabase
         .from("transactions")
-        .select(`
+        .select(
+          `
           barber_id,
           total_price,
           barbers(name)
-        `)
+        `
+        )
         .gte("transaction_date", start.toISOString())
         .lte("transaction_date", end.toISOString());
 
@@ -87,6 +80,34 @@ const Salary = () => {
     },
   });
 
+  // NEW: ambil detail transaksi untuk tukang cukur tertentu
+  const { data: barberTransactions, isLoading: loadingDetails } = useQuery({
+    queryKey: ["barber-transactions", selectedBarber?.barber_id, period, selectedYear, selectedMonth],
+    queryFn: async () => {
+      if (!selectedBarber) return [];
+      const { start, end } = getDateRange(period);
+      const { data, error } = await supabase
+        .from("transactions")
+        .select(
+          `
+          id,
+          transaction_date,
+          total_price,
+          services(service_name),
+          products(product_name)
+        `
+        )
+        .eq("barber_id", selectedBarber.barber_id)
+        .gte("transaction_date", start.toISOString())
+        .lte("transaction_date", end.toISOString())
+        .order("transaction_date", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedBarber,
+  });
+
   const totalEarnings = Number(salaryData?.reduce((sum: number, barber: any) => sum + Number(barber.total_earnings), 0) ?? 0);
 
   const formatCurrency = (amount: number) => {
@@ -108,7 +129,9 @@ const Salary = () => {
       case "year":
         return "Tahun Ini";
       case "custom":
-        return `${format(new Date(selectedYear, selectedMonth - 1), "MMMM yyyy", { locale: localeId })}`;
+        return `${format(new Date(selectedYear, selectedMonth - 1), "MMMM yyyy", {
+          locale: localeId,
+        })}`;
     }
   };
 
@@ -123,6 +146,7 @@ const Salary = () => {
           <p className="text-muted-foreground">Lihat pendapatan tukang cukur berdasarkan periode</p>
         </div>
 
+        {/* Pilihan Periode */}
         <div className="flex flex-wrap gap-4 items-end">
           <div className="space-y-2 w-full sm:w-64">
             <Label>Periode</Label>
@@ -177,6 +201,7 @@ const Salary = () => {
           )}
         </div>
 
+        {/* Total Pendapatan */}
         <Card>
           <CardHeader>
             <CardTitle>Total Pendapatan - {getPeriodLabel(period)}</CardTitle>
@@ -186,6 +211,7 @@ const Salary = () => {
           </CardContent>
         </Card>
 
+        {/* Tabel Gaji */}
         <div className="bg-card rounded-lg border">
           <Table>
             <TableHeader>
@@ -204,12 +230,17 @@ const Salary = () => {
                 </TableRow>
               ) : salaryData && salaryData.length > 0 ? (
                 salaryData.map((barber: any) => (
-                  <TableRow key={barber.barber_id}>
+                  <TableRow
+                    key={barber.barber_id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => {
+                      setSelectedBarber(barber);
+                      setIsDialogOpen(true);
+                    }}
+                  >
                     <TableCell className="font-medium">{barber.barber_name}</TableCell>
                     <TableCell>{barber.transaction_count}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(Number(barber.total_earnings))}
-                    </TableCell>
+                    <TableCell className="font-medium">{formatCurrency(Number(barber.total_earnings))}</TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -222,6 +253,48 @@ const Salary = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* NEW: Dialog detail transaksi */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Detail Transaksi - {selectedBarber?.barber_name}</DialogTitle>
+            </DialogHeader>
+
+            {loadingDetails ? (
+              <p className="text-center text-muted-foreground py-4">Memuat...</p>
+            ) : barberTransactions && barberTransactions.length > 0 ? (
+              <div className="max-h-[400px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead>Layanan</TableHead>
+                      <TableHead>Produk</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {barberTransactions.map((t: any) => (
+                      <TableRow key={t.id}>
+                        <TableCell>
+                          {format(new Date(t.transaction_date), "dd MMM yyyy HH:mm", {
+                            locale: localeId,
+                          })}
+                        </TableCell>
+                        <TableCell>{t.services?.service_name || "-"}</TableCell>
+                        <TableCell>{t.products?.product_name || "-"}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(Number(t.total_price))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">Tidak ada transaksi untuk periode ini</p>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

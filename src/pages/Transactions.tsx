@@ -250,6 +250,7 @@ const Transactions = () => {
                 <TableHead>Tukang Cukur</TableHead>
                 <TableHead>Layanan</TableHead>
                 <TableHead>Produk</TableHead>
+                <TableHead>Pembayaran</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead className="w-[100px]">Aksi</TableHead>
               </TableRow>
