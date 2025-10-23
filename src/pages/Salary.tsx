@@ -103,7 +103,7 @@ const Salary = () => {
 
       // 🔥 Kelompokkan berdasarkan layanan
       const groupedServices = data.reduce((acc: any, t: any) => {
-        const serviceName = t.services?.service_name || "Tidak Diketahui";
+        const serviceName = t.services?.service_name || "Produk";
         if (!acc[serviceName]) {
           acc[serviceName] = { count: 0, total: 0 };
         }
