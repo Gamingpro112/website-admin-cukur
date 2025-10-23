@@ -13,6 +13,8 @@ import { toast } from "sonner";
 const Barbers = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const queryClient = useQueryClient();
 
   const { data: barbers, isLoading } = useQuery({
@@ -25,15 +27,28 @@ const Barbers = () => {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const { error } = await supabase.from("barbers").insert({ name });
-      if (error) throw error;
+    mutationFn: async ({ email, password, name }: { email: string; password: string; name: string }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-barber`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
       toast.success("Tukang cukur berhasil ditambahkan");
       setIsOpen(false);
       setName("");
+      setEmail("");
+      setPassword("");
     },
     onError: (error: any) => {
       toast.error(error.message || "Gagal menambahkan tukang cukur");
@@ -56,8 +71,8 @@ const Barbers = () => {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      addMutation.mutate(name.trim());
+    if (name.trim() && email.trim() && password.trim()) {
+      addMutation.mutate({ email: email.trim(), password: password.trim(), name: name.trim() });
     }
   };
 
@@ -85,8 +100,16 @@ const Barbers = () => {
                   <Label htmlFor="name">Nama</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama tukang cukur" required />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required minLength={6} />
+                </div>
                 <Button type="submit" className="w-full" disabled={addMutation.isPending}>
-                  {addMutation.isPending ? "Menyimpan..." : "Simpan"}
+                  {addMutation.isPending ? "Membuat Akun..." : "Buat Akun Tukang Cukur"}
                 </Button>
               </form>
             </DialogContent>
