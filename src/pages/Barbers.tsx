@@ -5,21 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -96,13 +83,7 @@ const Barbers = () => {
               <form onSubmit={handleAdd} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nama</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nama tukang cukur"
-                    required
-                  />
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama tukang cukur" required />
                 </div>
                 <Button type="submit" className="w-full" disabled={addMutation.isPending}>
                   {addMutation.isPending ? "Menyimpan..." : "Simpan"}
@@ -132,12 +113,7 @@ const Barbers = () => {
                   <TableRow key={barber.id}>
                     <TableCell className="font-medium">{barber.name}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteMutation.mutate(barber.id)}
-                        disabled={deleteMutation.isPending}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(barber.id)} disabled={deleteMutation.isPending}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>

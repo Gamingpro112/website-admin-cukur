@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-type UserRole = "owner" | "cashier" | null;
+type UserRole = "owner" | "cashier" | "barber" | null;
 
 interface AuthContextType {
   user: User | null;
@@ -26,11 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   const fetchUserRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .single();
+    const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId).single();
 
     if (error) {
       console.error("Error fetching user role:", error);
@@ -41,23 +37,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          setTimeout(async () => {
-            const role = await fetchUserRole(session.user.id);
-            setUserRole(role);
-            setLoading(false);
-          }, 0);
-        } else {
-          setUserRole(null);
+      if (session?.user) {
+        setTimeout(async () => {
+          const role = await fetchUserRole(session.user.id);
+          setUserRole(role);
           setLoading(false);
-        }
+        }, 0);
+      } else {
+        setUserRole(null);
+        setLoading(false);
       }
-    );
+    });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
@@ -85,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, username: string, role: "owner" | "barber") => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -100,9 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
 
     if (data.user) {
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: data.user.id, role });
+      const { error: roleError } = await supabase.from("user_roles").insert({ user_id: data.user.id, role });
 
       if (roleError) throw roleError;
     }
