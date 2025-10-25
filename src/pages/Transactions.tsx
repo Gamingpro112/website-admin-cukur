@@ -23,6 +23,7 @@ const Transactions = () => {
     barber_id: "",
     service_id: "",
     product_id: "",
+    payment_method: "cash",
   });
   const queryClient = useQueryClient();
 
@@ -90,6 +91,7 @@ const Transactions = () => {
             service_id: data.service_id || null,
             product_id: data.product_id || null,
             total_price: totalPrice,
+            payment_method: data.payment_method,
           })
           .eq("id", editingId);
 
@@ -101,6 +103,7 @@ const Transactions = () => {
           service_id: data.service_id || null,
           product_id: data.product_id || null,
           total_price: totalPrice,
+          payment_method: data.payment_method,
         });
 
         if (error) throw error;
@@ -111,7 +114,7 @@ const Transactions = () => {
       toast.success(editingId ? "Transaksi berhasil diperbarui" : "Transaksi berhasil ditambahkan");
       setIsOpen(false);
       setEditingId(null);
-      setFormData({ barber_id: "", service_id: "", product_id: "" });
+      setFormData({ barber_id: "", service_id: "", product_id: "", payment_method: "cash" });
     },
     onError: (error: any) => {
       toast.error(error.message || "Gagal menyimpan transaksi");
@@ -148,6 +151,7 @@ const Transactions = () => {
       barber_id: transaction.barber_id || "",
       service_id: transaction.service_id || "",
       product_id: transaction.product_id || "",
+      payment_method: transaction.payment_method || "cash",
     });
     setIsOpen(true);
   };
@@ -155,7 +159,7 @@ const Transactions = () => {
   const handleCloseDialog = () => {
     setIsOpen(false);
     setEditingId(null);
-    setFormData({ barber_id: "", service_id: "", product_id: "" });
+    setFormData({ barber_id: "", service_id: "", product_id: "", payment_method: "cash" });
   };
 
   const formatCurrency = (amount: number) => {
@@ -234,6 +238,19 @@ const Transactions = () => {
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Metode Pembayaran</Label>
+                  <Select value={formData.payment_method} onValueChange={(value) => setFormData({ ...formData, payment_method: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih metode pembayaran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Tunai</SelectItem>
+                      <SelectItem value="non-cash">Non-Tunai</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button type="submit" className="w-full" disabled={addMutation.isPending}>
                   {addMutation.isPending ? "Menyimpan..." : "Simpan"}
                 </Button>
@@ -250,7 +267,7 @@ const Transactions = () => {
                 <TableHead>Tukang Cukur</TableHead>
                 <TableHead>Layanan</TableHead>
                 <TableHead>Produk</TableHead>
-                <TableHead>Pembayaran</TableHead>
+                <TableHead>Metode Pembayaran</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead className="w-[100px]">Aksi</TableHead>
               </TableRow>
@@ -273,6 +290,7 @@ const Transactions = () => {
                     <TableCell>{transaction.barbers?.name || "-"}</TableCell>
                     <TableCell>{transaction.services?.service_name || "-"}</TableCell>
                     <TableCell>{transaction.products?.product_name || "-"}</TableCell>
+                    <TableCell>{transaction.payment_method === "cash" ? "Tunai" : "Non-Tunai"}</TableCell>
                     <TableCell className="font-medium">{formatCurrency(Number(transaction.total_price))}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">

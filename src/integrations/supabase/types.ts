@@ -132,6 +132,7 @@ export type Database = {
           barber_id: string
           cashier_id: string | null
           id: string
+          payment_method: string
           product_id: string | null
           service_id: string | null
           total_price: number
@@ -141,6 +142,7 @@ export type Database = {
           barber_id: string
           cashier_id?: string | null
           id?: string
+          payment_method?: string
           product_id?: string | null
           service_id?: string | null
           total_price: number
@@ -150,6 +152,7 @@ export type Database = {
           barber_id?: string
           cashier_id?: string | null
           id?: string
+          payment_method?: string
           product_id?: string | null
           service_id?: string | null
           total_price?: number
