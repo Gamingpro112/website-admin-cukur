@@ -27,6 +27,10 @@ const Transactions = () => {
   });
   const queryClient = useQueryClient();
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["transactions", user?.id, userRole],
     queryFn: async () => {
@@ -114,7 +118,12 @@ const Transactions = () => {
       toast.success(editingId ? "Transaksi berhasil diperbarui" : "Transaksi berhasil ditambahkan");
       setIsOpen(false);
       setEditingId(null);
-      setFormData({ barber_id: "", service_id: "", product_id: "", payment_method: "cash" });
+      setFormData({
+        barber_id: "",
+        service_id: "",
+        product_id: "",
+        payment_method: "cash",
+      });
     },
     onError: (error: any) => {
       toast.error(error.message || "Gagal menyimpan transaksi");
@@ -159,7 +168,12 @@ const Transactions = () => {
   const handleCloseDialog = () => {
     setIsOpen(false);
     setEditingId(null);
-    setFormData({ barber_id: "", service_id: "", product_id: "", payment_method: "cash" });
+    setFormData({
+      barber_id: "",
+      service_id: "",
+      product_id: "",
+      payment_method: "cash",
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -168,6 +182,17 @@ const Transactions = () => {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  // Pagination logic
+  const totalTransactions = transactions?.length || 0;
+  const totalPages = Math.ceil(totalTransactions / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const displayedTransactions = transactions?.slice(startIndex, startIndex + rowsPerPage) || [];
+
+  const handleRowsPerPageChange = (value: string) => {
+    setRowsPerPage(Number(value));
+    setCurrentPage(1);
   };
 
   return (
@@ -259,6 +284,7 @@ const Transactions = () => {
           </Dialog>
         </div>
 
+        {/* Table */}
         <div className="bg-card rounded-lg border">
           <Table>
             <TableHeader>
@@ -275,12 +301,12 @@ const Transactions = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     Memuat...
                   </TableCell>
                 </TableRow>
-              ) : transactions && transactions.length > 0 ? (
-                transactions.map((transaction) => (
+              ) : displayedTransactions.length > 0 ? (
+                displayedTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
                       {format(new Date(transaction.transaction_date), "dd MMM yyyy HH:mm", {
@@ -306,7 +332,7 @@ const Transactions = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     Belum ada transaksi
                   </TableCell>
                 </TableRow>
@@ -315,6 +341,38 @@ const Transactions = () => {
           </Table>
         </div>
 
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center gap-2">
+            <span>Tampilkan:</span>
+            <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>data per halaman</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+              Sebelumnya
+            </Button>
+            <span>
+              Halaman {currentPage} dari {totalPages || 1}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}>
+              Selanjutnya
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete Dialog */}
         <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
