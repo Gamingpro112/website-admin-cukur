@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, Users, Package, ShoppingCart, FileText, DollarSign, Home } from "lucide-react";
+import { LogOut, Users, Package, ShoppingCart, FileText, DollarSign, Home, Calendar } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const ownerLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/dashboard/barbers", label: "Tukang Cukur", icon: Users },
+    { href: "/dashboard/schedule", label: "Jadwal", icon: Calendar },
     { href: "/dashboard/services", label: "Layanan", icon: Package },
     { href: "/dashboard/products", label: "Produk", icon: ShoppingCart },
     { href: "/dashboard/transactions", label: "Transaksi", icon: FileText },
@@ -26,6 +27,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const barberLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/dashboard/schedule", label: "Jadwal", icon: Calendar },
     { href: "/dashboard/transactions", label: "Transaksi Saya", icon: FileText },
     { href: "/dashboard/salary", label: "Pendapatan ", icon: DollarSign },
   ];
