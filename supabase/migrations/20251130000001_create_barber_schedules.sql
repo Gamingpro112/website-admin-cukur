@@ -1,5 +1,5 @@
 -- Create enum for shift types
-CREATE TYPE public.shift_type AS ENUM ('full', 'siang', 'libur');
+CREATE TYPE public.shift_type AS ENUM ('pagi', 'siang', 'full', 'libur');
 
 -- Create barber_schedules table
 CREATE TABLE public.barber_schedules (
@@ -59,6 +59,6 @@ CREATE TRIGGER update_barber_schedules_updated_at
   EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Add comments
-COMMENT ON COLUMN public.barber_schedules.shift IS 'full: 09:45-21:00, siang: 12:30-21:00, libur: hari libur';
+COMMENT ON COLUMN public.barber_schedules.shift IS 'pagi: 09:45-14:00, siang: 14:00-19:00, full: 09:45-21:00, libur: hari libur';
 COMMENT ON COLUMN public.barber_schedules.schedule_date IS 'Tanggal jadwal spesifik';
 

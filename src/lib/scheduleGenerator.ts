@@ -7,12 +7,12 @@
  * 3. Tidak boleh 3 orang libur bersamaan di hari yang sama
  * 
  * Soft Constraints:
- * 1. Distribusi shift merata (balance Full vs Siang)
+ * 1. Distribusi shift merata (balance Pagi/Siang/Full)
  * 2. Weekend sebaiknya ada lebih banyak coverage (Full shift)
  * 3. Beban kerja total per tukang cukur seimbang
  */
 
-export type ShiftType = "full" | "siang" | "libur";
+export type ShiftType = "pagi" | "siang" | "full" | "libur";
 
 export interface Barber {
   id: string;
@@ -130,10 +130,18 @@ function fillRemainingShifts(barbers: Barber[], schedule: DaySchedule[]): void {
         // Weekend priority: lebih banyak Full shift
         shift = "full";
       } else {
-        // Weekday: alternating Full/Siang untuk balance
+        // Weekday: rotating Pagi/Siang/Full untuk balance
         // Gunakan kombinasi hari dan barber index untuk variasi
-        const shouldBeFull = (daySchedule.dayOfWeek + barbers.indexOf(barber)) % 2 === 0;
-        shift = shouldBeFull ? "full" : "siang";
+        const barberIndex = barbers.indexOf(barber);
+        const rotation = (daySchedule.dayOfWeek + barberIndex) % 3;
+        
+        if (rotation === 0) {
+          shift = "pagi";
+        } else if (rotation === 1) {
+          shift = "siang";
+        } else {
+          shift = "full";
+        }
       }
 
       daySchedule.assignments.set(barber.id, shift);
@@ -252,8 +260,9 @@ function getWeekNumber(date: Date): number {
 export function getScheduleStatistics(schedule: ScheduleEntry[]) {
   const barberStats = new Map<string, {
     name: string;
-    fullShifts: number;
+    pagiShifts: number;
     siangShifts: number;
+    fullShifts: number;
     dayOffs: number;
     totalWorkDays: number;
   }>();
@@ -262,8 +271,9 @@ export function getScheduleStatistics(schedule: ScheduleEntry[]) {
     if (!barberStats.has(entry.barber_id)) {
       barberStats.set(entry.barber_id, {
         name: entry.barber_name,
-        fullShifts: 0,
+        pagiShifts: 0,
         siangShifts: 0,
+        fullShifts: 0,
         dayOffs: 0,
         totalWorkDays: 0,
       });
@@ -271,11 +281,14 @@ export function getScheduleStatistics(schedule: ScheduleEntry[]) {
 
     const stats = barberStats.get(entry.barber_id)!;
     
-    if (entry.shift === "full") {
-      stats.fullShifts++;
+    if (entry.shift === "pagi") {
+      stats.pagiShifts++;
       stats.totalWorkDays++;
     } else if (entry.shift === "siang") {
       stats.siangShifts++;
+      stats.totalWorkDays++;
+    } else if (entry.shift === "full") {
+      stats.fullShifts++;
       stats.totalWorkDays++;
     } else if (entry.shift === "libur") {
       stats.dayOffs++;

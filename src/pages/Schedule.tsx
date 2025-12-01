@@ -24,15 +24,16 @@ interface Schedule {
   id: string;
   barber_id: string;
   schedule_date: string;
-  shift: "full" | "siang" | "libur";
+  shift: "pagi" | "siang" | "full" | "libur";
   barbers: Barber;
 }
 
-type ShiftType = "full" | "siang" | "libur";
+type ShiftType = "pagi" | "siang" | "full" | "libur";
 
 const shiftLabels: Record<ShiftType, string> = {
+  pagi: "Pagi (09:45-14:00)",
+  siang: "Siang (14:00-19:00)",
   full: "Full (09:45-21:00)",
-  siang: "Siang (12:30-21:00)",
   libur: "Libur",
 };
 
@@ -43,7 +44,7 @@ const Schedule = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [barberId, setBarberId] = useState("");
-  const [shift, setShift] = useState<ShiftType>("full");
+  const [shift, setShift] = useState<ShiftType>("pagi");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [generatedSchedule, setGeneratedSchedule] = useState<ScheduleEntry[]>([]);
@@ -171,7 +172,7 @@ const Schedule = () => {
   const resetForm = () => {
     setSelectedDate("");
     setBarberId("");
-    setShift("full");
+    setShift("pagi");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -201,7 +202,9 @@ const Schedule = () => {
     }
 
     try {
-      const startDate = new Date(generateStartDate);
+      // Parse date dengan timezone-safe method
+      const [year, month, day] = generateStartDate.split("-").map(Number);
+      const startDate = new Date(year, month - 1, day);
       
       // Generate schedule menggunakan CSP algorithm
       const generated = generateWeeklySchedule(barbers, startDate);
@@ -279,7 +282,7 @@ const Schedule = () => {
     
     setBarberId(barberId);
     setSelectedDate(dateStr);
-    setShift(currentShift || "full");
+    setShift(currentShift || "pagi");
     setIsOpen(true);
   };
 
@@ -306,10 +309,12 @@ const Schedule = () => {
   };
 
   const getShiftBadge = (shift: ShiftType) => {
-    if (shift === "full") {
-      return <Badge className="bg-green-600 hover:bg-green-700">Full</Badge>;
+    if (shift === "pagi") {
+      return <Badge className="bg-orange-500 hover:bg-orange-600">Pagi</Badge>;
     } else if (shift === "siang") {
       return <Badge className="bg-blue-600 hover:bg-blue-700">Siang</Badge>;
+    } else if (shift === "full") {
+      return <Badge className="bg-green-600 hover:bg-green-700">Full</Badge>;
     } else {
       return <Badge variant="secondary">Libur</Badge>;
     }
@@ -353,15 +358,19 @@ const Schedule = () => {
         </div>
 
         {/* Legend */}
-        <div className="flex gap-4 items-center bg-muted p-4 rounded-lg">
+        <div className="flex gap-4 items-center bg-muted p-4 rounded-lg flex-wrap">
           <span className="font-medium">Keterangan:</span>
           <div className="flex items-center gap-2">
-            <Badge className="bg-green-600">Full</Badge>
-            <span className="text-sm">09:45-21:00</span>
+            <Badge className="bg-orange-500">Pagi</Badge>
+            <span className="text-sm">09:45-14:00</span>
           </div>
           <div className="flex items-center gap-2">
             <Badge className="bg-blue-600">Siang</Badge>
-            <span className="text-sm">12:30-21:00</span>
+            <span className="text-sm">14:00-19:00</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-green-600">Full</Badge>
+            <span className="text-sm">09:45-21:00</span>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">Libur</Badge>
@@ -480,8 +489,9 @@ const Schedule = () => {
                     <SelectValue placeholder="Pilih shift" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="full">{shiftLabels.full}</SelectItem>
+                    <SelectItem value="pagi">{shiftLabels.pagi}</SelectItem>
                     <SelectItem value="siang">{shiftLabels.siang}</SelectItem>
+                    <SelectItem value="full">{shiftLabels.full}</SelectItem>
                     <SelectItem value="libur">{shiftLabels.libur}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -537,7 +547,7 @@ const Schedule = () => {
                     <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
                       <li>Setiap tukang cukur libur maksimal 1x per minggu</li>
                       <li>Setiap hari minimal ada 2 orang kerja</li>
-                      <li>Distribusi shift Full dan Siang merata</li>
+                      <li>Distribusi shift Pagi, Siang, dan Full merata</li>
                       <li>Weekend prioritas shift Full</li>
                     </ul>
                   </AlertDescription>
@@ -583,7 +593,7 @@ const Schedule = () => {
                       <div key={stats.name} className="p-4 bg-muted rounded-lg space-y-2">
                         <p className="font-medium">{stats.name}</p>
                         <div className="text-sm space-y-1">
-                          <p>Full: {stats.fullShifts}x | Siang: {stats.siangShifts}x</p>
+                          <p>Pagi: {stats.pagiShifts}x | Siang: {stats.siangShifts}x | Full: {stats.fullShifts}x</p>
                           <p>Libur: {stats.dayOffs}x | Total Kerja: {stats.totalWorkDays} hari</p>
                         </div>
                       </div>
