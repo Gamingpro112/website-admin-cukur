@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      barber_schedules: {
+        Row: {
+          barber_id: string
+          created_at: string | null
+          id: string
+          schedule_date: string
+          shift: string
+        }
+        Insert: {
+          barber_id: string
+          created_at?: string | null
+          id?: string
+          schedule_date: string
+          shift: string
+        }
+        Update: {
+          barber_id?: string
+          created_at?: string | null
+          id?: string
+          schedule_date?: string
+          shift?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barber_schedules_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "barbers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barbers: {
         Row: {
           created_at: string | null
