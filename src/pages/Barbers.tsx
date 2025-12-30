@@ -57,19 +57,21 @@ const Barbers = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Soft delete - set is_active to false instead of deleting
+      // Hard delete - cascade will remove related transactions, salaries, and schedules
       const { error } = await supabase
         .from("barbers")
-        .update({ is_active: false })
+        .delete()
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
-      toast.success("Tukang cukur berhasil dinonaktifkan");
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["salaryData"] });
+      toast.success("Tukang cukur berhasil dihapus");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Gagal menonaktifkan tukang cukur");
+      toast.error(error.message || "Gagal menghapus tukang cukur");
     },
   });
 
