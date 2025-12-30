@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -28,14 +29,52 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/cashiers" element={<Cashiers />} />
-            <Route path="/dashboard/barbers" element={<Barbers />} />
-            <Route path="/dashboard/services" element={<Services />} />
-            <Route path="/dashboard/products" element={<Products />} />
-            <Route path="/dashboard/transactions" element={<Transactions />} />
-            <Route path="/dashboard/salary" element={<Salary />} />
-            <Route path="/dashboard/schedule" element={<Schedule />} />
+            
+            {/* Protected Dashboard Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Owner-only routes */}
+            <Route path="/dashboard/barbers" element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Barbers />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/cashiers" element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Cashiers />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/services" element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Services />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/products" element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Products />
+              </ProtectedRoute>
+            } />
+            
+            {/* Shared routes (both owner and barber) */}
+            <Route path="/dashboard/transactions" element={
+              <ProtectedRoute allowedRoles={["owner", "barber"]}>
+                <Transactions />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/salary" element={
+              <ProtectedRoute allowedRoles={["owner", "barber"]}>
+                <Salary />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/schedule" element={
+              <ProtectedRoute allowedRoles={["owner", "barber"]}>
+                <Schedule />
+              </ProtectedRoute>
+            } />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
