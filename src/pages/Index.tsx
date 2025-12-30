@@ -26,7 +26,7 @@ const Index = () => {
       <div className="text-center space-y-6 max-w-md px-4">
         <div className="flex justify-center">
           <div className="p-4">
-            <img className="w-60" src="./public/images/logoweb.png" alt="logo web" />
+            <img className="w-60" src="/public/images/logoweb.png" alt="logo web" />
           </div>
         </div>
         <h1 className="text-4xl font-bold">Murphy Kasir</h1>
