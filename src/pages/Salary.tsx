@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { id as localeId } from "date-fns/locale";
 type Period = "today" | "week" | "month" | "year" | "custom";
 
 const Salary = () => {
+  const { user, userRole } = useAuth();
   const [period, setPeriod] = useState<Period>("today");
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
@@ -37,12 +39,27 @@ const Salary = () => {
     }
   };
 
+  // Get barber_id for current user if they are a barber
+  const { data: barberData } = useQuery({
+    queryKey: ["current-barber-salary", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("barbers")
+        .select("id, name")
+        .eq("id", user?.id)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user && userRole === "barber",
+  });
+
   const { data: salaryData, isLoading } = useQuery({
-    queryKey: ["salary", period, selectedYear, selectedMonth],
+    queryKey: ["salary", period, selectedYear, selectedMonth, userRole, barberData?.id],
     queryFn: async () => {
       const { start, end } = getDateRange(period);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("transactions")
         .select(
           `
@@ -54,6 +71,12 @@ const Salary = () => {
         .gte("transaction_date", start.toISOString())
         .lte("transaction_date", end.toISOString());
 
+      // If user is barber, only fetch their own transactions
+      if (userRole === "barber" && barberData?.id) {
+        query = query.eq("barber_id", barberData.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
 
       const salaryByBarber = data.reduce((acc: any, transaction: any) => {
@@ -77,6 +100,7 @@ const Salary = () => {
 
       return Object.values(salaryByBarber);
     },
+    enabled: !!user && (userRole === "owner" || (userRole === "barber" && !!barberData)),
   });
 
   // Detail transaksi per layanan
@@ -156,8 +180,12 @@ const Salary = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Laporan Gaji</h1>
-          <p className="text-muted-foreground">Lihat pendapatan tukang cukur berdasarkan periode</p>
+          <h1 className="text-3xl font-bold">{userRole === "owner" ? "Laporan Gaji" : "Pendapatan Saya"}</h1>
+          <p className="text-muted-foreground">
+            {userRole === "owner" 
+              ? "Lihat pendapatan tukang cukur berdasarkan periode" 
+              : "Lihat pendapatan Anda berdasarkan periode"}
+          </p>
         </div>
 
         {/* Pilihan Periode */}

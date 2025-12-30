@@ -31,8 +31,23 @@ const Transactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
+  // Get barber_id for current user if they are a barber
+  const { data: barberData } = useQuery({
+    queryKey: ["current-barber", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("barbers")
+        .select("id")
+        .eq("id", user?.id)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user && userRole === "barber",
+  });
+
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["transactions", user?.id, userRole],
+    queryKey: ["transactions", user?.id, userRole, barberData?.id],
     queryFn: async () => {
       let query = supabase
         .from("transactions")
@@ -46,11 +61,16 @@ const Transactions = () => {
         )
         .order("transaction_date", { ascending: false });
 
+      // If user is barber, only fetch their transactions
+      if (userRole === "barber" && barberData?.id) {
+        query = query.eq("barber_id", barberData.id);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && (userRole === "owner" || (userRole === "barber" && !!barberData)),
   });
 
   const { data: barbers } = useQuery({

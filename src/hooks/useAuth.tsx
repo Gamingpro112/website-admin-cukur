@@ -105,11 +105,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUserRole(null);
-    navigate("/auth");
-    toast.success("Logout berhasil!");
+    try {
+      // Clear all local state first
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      
+      // Sign out from Supabase (clears session storage/cookies)
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear any remaining local storage items
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      toast.success("Logout berhasil!");
+      
+      // Force hard redirect to clear any cached state
+      window.location.href = "/auth";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if there's an error, force redirect
+      window.location.href = "/auth";
+    }
   };
 
   return (
