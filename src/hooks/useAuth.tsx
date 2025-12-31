@@ -25,6 +25,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Check if user exists in user_roles (not deleted)
+  const checkUserExists = async (userId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error checking user existence:", error);
+      return false;
+    }
+    return !!data;
+  };
+
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId).single();
 
@@ -36,15 +51,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return data?.role as UserRole;
   };
 
+  // Force logout deleted users
+  const forceLogoutDeletedUser = async () => {
+    setUser(null);
+    setSession(null);
+    setUserRole(null);
+    await supabase.auth.signOut({ scope: 'local' });
+    localStorage.clear();
+    sessionStorage.clear();
+  };
+
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
         setTimeout(async () => {
+          // Check if user still exists (wasn't deleted)
+          const userExists = await checkUserExists(session.user.id);
+          if (!userExists) {
+            toast.error("Akun Anda telah dihapus");
+            await forceLogoutDeletedUser();
+            window.location.href = "/auth";
+            return;
+          }
+          
           const role = await fetchUserRole(session.user.id);
           setUserRole(role);
           setLoading(false);
@@ -60,6 +94,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        // Check if user still exists
+        const userExists = await checkUserExists(session.user.id);
+        if (!userExists) {
+          toast.error("Akun Anda telah dihapus");
+          await forceLogoutDeletedUser();
+          window.location.href = "/auth";
+          return;
+        }
+        
         const role = await fetchUserRole(session.user.id);
         setUserRole(role);
       }
@@ -70,12 +113,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
+    
+    // Check if user exists in our system (not deleted)
+    if (data.user) {
+      const userExists = await checkUserExists(data.user.id);
+      if (!userExists) {
+        await supabase.auth.signOut({ scope: 'local' });
+        throw new Error("Akun tidak ditemukan atau telah dihapus");
+      }
+    }
+    
     toast.success("Login berhasil!");
   };
 
@@ -111,21 +164,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(null);
       setUserRole(null);
       
-      // Sign out from Supabase (clears session storage/cookies)
-      await supabase.auth.signOut({ scope: 'global' });
+      // Sign out from Supabase
+      await supabase.auth.signOut({ scope: 'local' });
       
-      // Clear any remaining local storage items
-      localStorage.removeItem('supabase.auth.token');
+      // Clear all storage
+      localStorage.clear();
       sessionStorage.clear();
       
       toast.success("Logout berhasil!");
       
-      // Force hard redirect to clear any cached state
-      window.location.href = "/auth";
+      // Small delay to ensure state is cleared before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate programmatically instead of hard reload
+      window.location.replace("/auth");
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if there's an error, force redirect
-      window.location.href = "/auth";
+      // Force clear and redirect even on error
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace("/auth");
     }
   };
 
