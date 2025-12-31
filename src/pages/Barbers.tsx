@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 
 const Barbers = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,21 +59,30 @@ const Barbers = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Hard delete - cascade will remove related transactions, salaries, and schedules
-      const { error } = await supabase
-        .from("barbers")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-barber`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ barber_id: id }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["barbers"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["salaryData"] });
       toast.success("Tukang cukur berhasil dihapus");
+      setDeleteId(null);
     },
     onError: (error: any) => {
       toast.error(error.message || "Gagal menghapus tukang cukur");
+      setDeleteId(null);
     },
   });
 
@@ -79,6 +90,12 @@ const Barbers = () => {
     e.preventDefault();
     if (name.trim() && email.trim() && password.trim()) {
       addMutation.mutate({ email: email.trim(), password: password.trim(), name: name.trim() });
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId);
     }
   };
 
@@ -142,7 +159,12 @@ const Barbers = () => {
                   <TableRow key={barber.id}>
                     <TableCell className="font-medium">{barber.name}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(barber.id)} disabled={deleteMutation.isPending}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setDeleteId(barber.id)} 
+                        disabled={deleteMutation.isPending}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
@@ -159,6 +181,15 @@ const Barbers = () => {
           </Table>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Tukang Cukur"
+        description="Apakah Anda yakin ingin menghapus tukang cukur ini? Semua data transaksi, jadwal, dan gaji terkait juga akan dihapus. Data yang dihapus tidak dapat dikembalikan."
+        isPending={deleteMutation.isPending}
+      />
     </DashboardLayout>
   );
 };
