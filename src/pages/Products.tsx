@@ -22,9 +22,11 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 
 const Products = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ product_name: "", price: "" });
   const queryClient = useQueryClient();
 
@@ -61,9 +63,11 @@ const Products = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Produk berhasil dihapus");
+      setDeleteId(null);
     },
     onError: (error: any) => {
       toast.error(error.message || "Gagal menghapus produk");
+      setDeleteId(null);
     },
   });
 
@@ -74,6 +78,12 @@ const Products = () => {
         product_name: formData.product_name.trim(),
         price: parseFloat(formData.price),
       });
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId);
     }
   };
 
@@ -159,7 +169,7 @@ const Products = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteMutation.mutate(product.id)}
+                        onClick={() => setDeleteId(product.id)}
                         disabled={deleteMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -178,6 +188,15 @@ const Products = () => {
           </Table>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Hapus Produk"
+        description="Apakah Anda yakin ingin menghapus produk ini? Data yang dihapus tidak dapat dikembalikan."
+        isPending={deleteMutation.isPending}
+      />
     </DashboardLayout>
   );
 };
